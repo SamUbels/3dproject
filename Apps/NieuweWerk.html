@@ -128,14 +128,20 @@ imageryLayers.addImageryProvider(new Cesium.WebMapServiceImageryProvider({
 					
 // define a query and convert it into uri. FOr example, our beloved almere sever. The query asks about some object attributive values based on location of the click:		
 // you can also use wfs!!!	
-			var uriBase = "http://almere.pilod.nl:8890/sparql";
-			var query = 'PREFIX  bag:  <http://bag.kadaster.nl/def#> PREFIX  geo: <http://www.opengis.net/ont/geosparql#> Prefix  virtrd: <http://www.openlinksw.com/schemas/virtrdf#> SELECT DISTINCT ?Verblijfsobject_ID ?gebruiksdoel  ?status ?oppervlakte ?naamOpenbareRuimte ?huisnummer ?postcode ?bouwjaar  ?distance WHERE { ?Verblijfsobject bag:gebruiksdoel ?gebruiksdoel; bag:hoofdadres ?Nummeraanduiding; bag:identificatiecode ?Verblijfsobject_ID; bag:onderdeelVan ?Pand; bag:oppervlakte ?oppervlakte; bag:status ?status. ?Pand bag:bouwjaar ?bouwjaar. ?OpenbareRuimte a bag:OpenbareRuimte; bag:naamOpenbareRuimte ?naamOpenbareRuimte . ?Nummeraanduiding a bag:Nummeraanduiding; bag:gerelateerdeOpenbareRuimte ?OpenbareRuimte; bag:huisnummer ?huisnummer; bag:postcode ?postcode . {SELECT DISTINCT ?Verblijfsobject ?wkt ?point WHERE { ?Verblijfsobject a bag:Verblijfsobject; geo:hasGeometry [geo:asWKT ?wkt] . BIND ("POINT(' + pickedCoord + ')"^^<http://www.openlinksw.com/schemas/virtrdf#Geometry> as ?point) FILTER( bif:st_intersects(?point, ?wkt, 0.05))}} BIND (bif:st_distance(bif:st_point('+ pickedCoordComma +'), ?wkt)as ?distance) }  Order by ?distance Limit 1';
+			var uriBase = "http://lod.kb.nl/sparql"; 			
+			
+			//var query = 'PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#> PREFIX rce: <http://lod.kb.nl/rce/ontology/cho#> SELECT ?status ?locatie WHERE { graph <http://lod.kb.nl/rce/> { ?monument rce:heeftPlaats "Rotterdam"; rce:heeftStatus ?status; rce:heeftLocatieAanduiding ?locatie; rce:heeftMonumentnummer ?monumentNummer . SERVICE<http://cliopatria.lod.labs.vu.nl:3020/sparql> { ?s <http://example.org/monument_number> ?monumentNummer; <http://example.org/reference_number> ?img_Number . } { SELECT DISTINCT ?monument ?coordinate ?point {?monument a rce:Rijksmonument; geo:lat ?lat; geo:long ?long. BIND(bif:st_point(xsd:double(?long), xsd:double(?lat)) as ?coordinate) BIND ("POINT(' + pickedCoord + ')"^^<http://www.openlinksw.com/schemas/virtrdf#Geometry> as ?point) FILTER( bif:st_intersects(?point, ?coordinate, 0.05)) } } BIND (bif:st_distance(bif:st_point('+ pickedCoordComma  +'), ?coordinate)as ?distance) } } Order by ?distance Limit 1'
+			
+			var query = 'PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#> PREFIX rce: <http://lod.kb.nl/rce/ontology/cho#> SELECT ?status ?locatie WHERE { graph <http://lod.kb.nl/rce/> { ?monument rce:heeftPlaats "Rotterdam"; rce:heeftStatus ?status; rce:heeftLocatieAanduiding ?locatie . { SELECT DISTINCT ?monument ?coordinate ?point { ?monument a rce:Rijksmonument; geo:lat ?lat; geo:long ?long. BIND(bif:st_point(xsd:double(?long), xsd:double(?lat)) as ?coordinate) BIND ("POINT(' + pickedCoord + ')"^^<http://www.openlinksw.com/schemas/virtrdf#Geometry> as ?point) FILTER( bif:st_intersects(?point, ?coordinate, 0.05)) } } BIND (bif:st_distance(bif:st_point('+ pickedCoordComma  +'), ?coordinate)as ?distance) }} Order by ?distance Limit 1'
+			
+			//var query = 'PREFIX  bag:  <http://bag.kadaster.nl/def#> PREFIX  geo: <http://www.opengis.net/ont/geosparql#> Prefix  virtrd: <http://www.openlinksw.com/schemas/virtrdf#> SELECT DISTINCT ?Verblijfsobject_ID ?gebruiksdoel  ?status ?oppervlakte ?naamOpenbareRuimte ?huisnummer ?postcode ?bouwjaar  ?distance WHERE { ?Verblijfsobject bag:gebruiksdoel ?gebruiksdoel; bag:hoofdadres ?Nummeraanduiding; bag:identificatiecode ?Verblijfsobject_ID; bag:onderdeelVan ?Pand; bag:oppervlakte ?oppervlakte; bag:status ?status. ?Pand bag:bouwjaar ?bouwjaar. ?OpenbareRuimte a bag:OpenbareRuimte; bag:naamOpenbareRuimte ?naamOpenbareRuimte . ?Nummeraanduiding a bag:Nummeraanduiding; bag:gerelateerdeOpenbareRuimte ?OpenbareRuimte; bag:huisnummer ?huisnummer; bag:postcode ?postcode . {SELECT DISTINCT ?Verblijfsobject ?wkt ?point WHERE { ?Verblijfsobject a bag:Verblijfsobject; geo:hasGeometry [geo:asWKT ?wkt] . BIND ("POINT(' + pickedCoord + ')"^^<http://www.openlinksw.com/schemas/virtrdf#Geometry> as ?point) FILTER( bif:st_intersects(?point, ?wkt, 0.05))}} BIND (bif:st_distance(bif:st_point('+ pickedCoordComma +'), ?wkt)as ?distance) }  Order by ?distance Limit 1';
+			
 			var queryURI = encodeURIComponent(query);
 			var URI = uriBase + "?" + "query=" + queryURI;
 			var dataQuery = "query=" + queryURI;
 
 					console.log(URI);
-					
+					console.log(query);		
 // Ajax call with the query				
 // If the call is successfull, use the data for the massage in the info box
 
@@ -156,23 +162,23 @@ imageryLayers.addImageryProvider(new Cesium.WebMapServiceImageryProvider({
                                                          for (var x in bindings) {
 // Attributes))
 																			var paramdata = data.results.bindings[x];
-																			var gebruiksdoel = paramdata["gebruiksdoel"]["value"];
-																			var naamOpenbareRuimte = paramdata["naamOpenbareRuimte"]["value"];
-																			var huisnummer = paramdata["huisnummer"]["value"];
-																			var postcode = paramdata["postcode"]["value"];
-																			var oppervlakte = paramdata["oppervlakte"]["value"];
-																			var bouwjaar = paramdata["bouwjaar"]["value"];
-																			var Verblijfsobject_ID = paramdata["Verblijfsobject_ID"]["value"];
-																			var status = paramdata["status"]["value"];
+																			//var gebruiksdoel = paramdata["gebruiksdoel"]["value"];
+																			//var naamOpenbareRuimte = paramdata["naamOpenbareRuimte"]["value"];
+																			//var huisnummer = paramdata["huisnummer"]["value"];
+																			//var postcode = paramdata["postcode"]["value"];
+																			//var oppervlakte = paramdata["oppervlakte"]["value"];
+																			//var bouwjaar = paramdata["bouwjaar"]["value"];
+																			//var Verblijfsobject_ID = paramdata["Verblijfsobject_ID"]["value"];
+																			//var status = paramdata["status"]["value"];
 
-																			console.log(gebruiksdoel);
-																			console.log(naamOpenbareRuimte);
-																			console.log(huisnummer);
-																			console.log(postcode);
-																			console.log(oppervlakte);
-																			console.log(bouwjaar);
-																			console.log(Verblijfsobject_ID);
-																			console.log(status);
+																			//console.log(gebruiksdoel);
+																			//console.log(naamOpenbareRuimte);
+																			//console.log(huisnummer);
+																			//console.log(postcode);
+																			//console.log(oppervlakte);
+																			//console.log(bouwjaar);
+																			//console.log(Verblijfsobject_ID);
+																			//console.log(status);
 													
 													var valueString = [];
 													for (var i = 0; i < data.head.vars.length; i++) {
